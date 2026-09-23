@@ -1,58 +1,25 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Laravel Backend — Desenvolvimento
-# PHP 8.2 com FPM + extensões necessárias para Laravel + PostgreSQL
-# ─────────────────────────────────────────────────────────────────────────────
-FROM php:8.2-fpm
+FROM php:8.4-cli-alpine
 
-# ── Dependências de sistema ──────────────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
+# Dependências de sistema e extensões para Postgres e Laravel
+RUN apk add --no-cache \
+    postgresql-dev \
+    libzip-dev \
     zip \
     unzip \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libpq-dev \
-    libzip-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    git \
+    && docker-php-ext-install pdo pdo_pgsql zip pcntl bcmath
 
-# ── Extensões PHP ────────────────────────────────────────────────────────────
-RUN docker-php-ext-install \
-    pdo \
-    pdo_pgsql \
-    pgsql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip \
-    xml
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ── Composer ─────────────────────────────────────────────────────────────────
-COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
-
-# ── Diretório de trabalho ─────────────────────────────────────────────────────
 WORKDIR /var/www/api
 
-# ── Copia apenas os arquivos de dependência primeiro (cache de layers) ────────
-COPY composer.json composer.lock ./
+# Script de entrada para automação de permissões e setup
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# ── Instala dependências sem scripts (o código ainda não foi copiado) ─────────
-RUN composer install --no-scripts --no-autoloader --prefer-dist
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-# ── Copia o restante do código ────────────────────────────────────────────────
-COPY . .
+EXPOSE 8000
 
-# ── Gera autoload otimizado ───────────────────────────────────────────────────
-RUN composer dump-autoload --optimize
-
-# ── Permissões de escrita para storage e bootstrap/cache ─────────────────────
-RUN chown -R www-data:www-data /var/www/api/storage /var/www/api/bootstrap/cache \
-    && chmod -R 775 /var/www/api/storage /var/www/api/bootstrap/cache
-
-EXPOSE 9000
-
-CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
