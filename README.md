@@ -52,3 +52,5 @@ docker compose exec api php artisan migrate
 - `docker compose` - Docker compose é a ferramenta Docker que permite rodar mais de um container ao mesmo tempo no projeto, de forma que consigam se comunicar e agir em conjunto (uma espécie de orquestrador)
 - `exec` - Executa algum comando no "terminal do container"
 - `php artisan migrate` - Comando do Laravel para subir as migrations no banco.
+
+I have made the Issue #7 on this branch
