@@ -9,4 +9,8 @@ class Deposit extends Model
 {
     /** @use HasFactory<\Database\Factories\DepositFactory> */
     use HasFactory;
+
+    public function products() {
+        return $this->hasMany(DepositItem::class);
+    }
 }

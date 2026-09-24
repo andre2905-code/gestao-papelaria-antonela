@@ -9,4 +9,8 @@ class Customer extends Model
 {
     /** @use HasFactory<\Database\Factories\CustomerFactory> */
     use HasFactory;
+
+    public function orders() {
+        return $this->hasMany(Order::class);
+    }
 }
