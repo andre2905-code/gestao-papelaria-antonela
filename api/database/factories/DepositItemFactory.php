@@ -4,12 +4,13 @@ namespace Database\Factories;
 
 use App\Models\Deposit;
 use App\Models\DepositItem;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Deposit>
+ * @extends Factory<DepositItem>
  */
-class DepositFactory extends Factory
+class DepositItemFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,13 +19,10 @@ class DepositFactory extends Factory
      */
     public function definition(): array
     {
-        $deposits = ["Loja física", "Autônomo", "Marketplace"];
         return [
-            'name' => fake()->randomElement($deposits),
+            'product_id' => Product::factory(),
+            'deposit_id' => Deposit::factory(),
+            'quantity' => fake()->numberBetween(1, 5)
         ];
-    }
-
-    public function withItems(): static {
-        return $this->has(DepositItem::factory())->afterCreating(function () {});
     }
 }

@@ -18,7 +18,10 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->name(),
+            'phone' => fake()->phoneNumber(),
+            'cpf' => fake()->regexify('[0-9]{3}.[0-9]{3}.[0-9]{3}-[0-9]{2}'),
+            'birth_date' => fake()->date(),
         ];
     }
 }

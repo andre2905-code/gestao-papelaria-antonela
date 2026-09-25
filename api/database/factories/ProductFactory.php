@@ -17,8 +17,13 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
+        $adjectives = ["Azul", "Preto", "Vermelho", "Premium", "Comum", "Grande", "Pequeno", "Fino", "Grosso"];
+        $nouns = ["Caderno", "Livro", "Sketchbook", "Marca Páginas", "Lápis", "Apontador", "Apagador"];
+
         return [
-            //
+            'title' => fake()->randomElement($nouns) . ' ' . fake()->randomElement($adjectives),
+            'price' => fake()->randomFloat(2, 10, 100),
+            'sku' => fake()->regexify('[A-Z]{3}-[0-9]{4}'),
         ];
     }
 }
