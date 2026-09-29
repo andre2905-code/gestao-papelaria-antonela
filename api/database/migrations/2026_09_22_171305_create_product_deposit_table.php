@@ -23,7 +23,6 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->integer('quantity')->default(0);
-            $table->integer('min_quantity')->nullable();
 
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent();

@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+    /** @use HasFactory<ProductFactory> */
+    use HasFactory;
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function depositItems()
+    {
+        return $this->hasMany(DepositItem::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+}
