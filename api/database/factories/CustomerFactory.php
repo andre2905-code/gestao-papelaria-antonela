@@ -19,9 +19,11 @@ class CustomerFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->phoneNumber(),
-            'cpf' => fake()->regexify('[0-9]{3}.[0-9]{3}.[0-9]{3}-[0-9]{2}'),
+            'cpf' => fake()->unique()->numerify('###########'),
             'birth_date' => fake()->date(),
+            'is_active' => true,
         ];
     }
 }

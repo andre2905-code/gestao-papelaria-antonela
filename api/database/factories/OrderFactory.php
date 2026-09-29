@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Customer;
+use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -20,30 +21,41 @@ class OrderFactory extends Factory
      */
     public function definition(): array
     {
-        $statuses = ["pending", "confirmed", "cancelled"];
+        $statuses = ['pending', 'confirmed', 'cancelled'];
+
         return [
             'customer_id' => Customer::factory(),
             'status' => fake()->randomElement($statuses),
-            'total' => 0
+            'payment_method' => fake()->optional()->randomElement(['pix', 'card', 'cash']),
+            'notes' => fake()->optional()->sentence(),
+            'total' => 0,
         ];
     }
 
-    public function withItens(int $count = 3): static {
+    public function withItems(int $count = 3): static
+    {
         return $this->has(
             OrderItem::factory()
                 ->count($count)
-                ->state(function (array $attrs, Order $order) {
+                ->state(function (array $attributes, Order $order) {
                     $product = Product::factory()->create();
+                    $deposit = Deposit::factory()->create();
+                    $quantity = fake()->numberBetween(1, 5);
+                    $unitPrice = $product->promo_price ?? $product->price;
 
                     return [
                         'product_id' => $product->id,
-                        'unit_price' => $product->promo_price ?? $product->price,
+                        'deposit_id' => $deposit->id,
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'subtotal' => $quantity * $unitPrice,
                     ];
                 }),
-            'items'
+            'orderItems'
         )->afterCreating(function (Order $order) {
-            $total = $order->items->sum(fn ($item) => $item->quantity * $item->unit_price);
-            $order->updateQuietly(['total' => $total]);
+            $order->updateQuietly([
+                'total' => $order->orderItems->sum('subtotal'),
+            ]);
         });
     }
 }

@@ -4,7 +4,15 @@ import LoginForm from './components/LoginForm'
 import { useAuth } from './hooks/useAuth'
 
 function App() {
-  const { user, error, isLoading, login, logout } = useAuth()
+  const { user, error, isLoading, isInitializing, login, logout } = useAuth();
+
+  if (isInitializing) {
+    return (
+      <main className="auth-page">
+        <p className="description">Carregando...</p>
+      </main>
+    )
+  }
 
   return (
     <main className="auth-page">

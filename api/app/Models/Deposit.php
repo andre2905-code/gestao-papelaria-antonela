@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Database\Factories\DepositFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Deposit extends Model
 {
-    /** @use HasFactory<\Database\Factories\DepositFactory> */
+    /** @use HasFactory<DepositFactory> */
     use HasFactory;
 
-    public function products() {
+    public function items()
+    {
         return $this->hasMany(DepositItem::class);
     }
 }

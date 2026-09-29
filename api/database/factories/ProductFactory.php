@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,13 +18,17 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $adjectives = ["Azul", "Preto", "Vermelho", "Premium", "Comum", "Grande", "Pequeno", "Fino", "Grosso"];
-        $nouns = ["Caderno", "Livro", "Sketchbook", "Marca Páginas", "Lápis", "Apontador", "Apagador"];
+        $adjectives = ['Azul', 'Preto', 'Vermelho', 'Premium', 'Comum', 'Grande', 'Pequeno', 'Fino', 'Grosso'];
+        $nouns = ['Caderno', 'Livro', 'Sketchbook', 'Marca Páginas', 'Lápis', 'Apontador', 'Apagador'];
+        $price = fake()->randomFloat(2, 10, 100);
 
         return [
-            'title' => fake()->randomElement($nouns) . ' ' . fake()->randomElement($adjectives),
-            'price' => fake()->randomFloat(2, 10, 100),
-            'sku' => fake()->regexify('[A-Z]{3}-[0-9]{4}'),
+            'category_id' => Category::factory(),
+            'title' => fake()->randomElement($nouns).' '.fake()->randomElement($adjectives),
+            'price' => $price,
+            'promo_price' => fake()->optional(0.3)->randomFloat(2, 5, $price),
+            'sku' => fake()->unique()->regexify('[A-Z]{3}-[0-9]{4}'),
+            'is_active' => true,
         ];
     }
 }

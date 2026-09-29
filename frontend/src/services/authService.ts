@@ -77,3 +77,22 @@ export async function logout(): Promise<void> {
     throw new Error(await getErrorMessage(response))
   }
 }
+
+export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+  const response = await fetch(`${apiUrl}/api/user`, {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Não foi possível verificar a sessão.')
+  }
+
+  return response.json()
+}

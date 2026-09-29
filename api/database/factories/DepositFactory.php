@@ -18,13 +18,14 @@ class DepositFactory extends Factory
      */
     public function definition(): array
     {
-        $deposits = ["Loja física", "Autônomo", "Marketplace"];
         return [
-            'name' => fake()->randomElement($deposits),
+            'name' => fake()->unique()->company(),
+            'is_active' => true,
         ];
     }
 
-    public function withItems(): static {
-        return $this->has(DepositItem::factory())->afterCreating(function () {});
+    public function withItems(int $count = 3): static
+    {
+        return $this->has(DepositItem::factory()->count($count), 'items');
     }
 }

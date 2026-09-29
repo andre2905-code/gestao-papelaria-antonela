@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Deposit;
 use Illuminate\Database\Seeder;
 
 class DepositSeeder extends Seeder
@@ -12,6 +12,8 @@ class DepositSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        foreach (['Loja física', 'Estoque principal', 'Marketplace'] as $name) {
+            Deposit::firstOrCreate(['name' => $name], ['is_active' => true]);
+        }
     }
 }
