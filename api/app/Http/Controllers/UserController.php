@@ -12,7 +12,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json([
+            'success' => null,
+            'data' => User::all(),
+        ]);
     }
 
     /**
@@ -20,7 +23,35 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string']
+        ]);
+
+        $user = new User();
+
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+        $user->password = $request->input('password');
+
+        $success = $user->save();
+
+        if (!$success) {
+            return response()->json([
+                'success' => $success,
+                'data' => [],
+                'message' => "Ocorreu um erro ao criar o usuário. Verifique as informações enviadas e tente novamente.",
+                'errors' => []
+            ]);
+        }
+
+        return response()->json([
+            'success' => $success,
+            'data' => [],
+            'message' => "Usuário cadastrado com sucesso.",
+            'errors' => []
+        ]);
     }
 
     /**
