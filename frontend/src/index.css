@@ -1,3 +1,23 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-antonela-50: #ffe4ec;
+  --color-antonela-100: #ffc1d5;
+  --color-antonela-200: #fa8fb1;
+  --color-antonela-500: #fc6998;
+  --color-antonela-600: #f74780;
+}
+
+@layer base {
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 antialiased font-sans transition-colors duration-200;
+  }
+}
 body {
   margin: 0;
 }
