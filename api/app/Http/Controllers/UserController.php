@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
@@ -73,7 +77,6 @@ class UserController extends Controller
             'password' => ['string']
         ]);
 
-        // TODO: Testar com cláusula `if` no lugar de `??`, para verificar se é erro de validação.
         if ($request->input('name'))
             $user->name = $request->input('name');
 
@@ -112,6 +115,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        // Implement soft delete
     }
 }
