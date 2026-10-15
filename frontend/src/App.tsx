@@ -9,6 +9,7 @@ import { DepositsPage } from './pages/DepositsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import LoginForm from './components/LoginForm';
 import { useAuth } from './hooks/useAuth';
+import { UsersPage } from './pages/UsersPage';
 import './App.css';
 
 const App: React.FC = () => {
@@ -56,6 +57,7 @@ const App: React.FC = () => {
             <Route path="/deposits" element={<DepositsPage />} />
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="*" element={<Navigate to="/products" replace />} />
+			<Route path="/users" element={<UsersPage />} />
           </Routes>
         </main>
       </div>

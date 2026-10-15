@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import { 
   Package, 
   Tags, 
   ShoppingCart, 
   Warehouse, 
   Users, 
+  UserCog,
   Store,
   ChevronLeft,
   ChevronRight,
   Menu,
   X
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { NavItem } from '../types/navigation';
 
 const menuItems: NavItem[] = [
@@ -20,6 +21,7 @@ const menuItems: NavItem[] = [
   { title: 'Pedidos', path: '/orders', icon: ShoppingCart },
   { title: 'Depósitos', path: '/deposits', icon: Warehouse },
   { title: 'Clientes', path: '/customers', icon: Users },
+  { title: 'Usuários', path: '/users', icon: UserCog },
 ];
 
 interface SidebarProps {
@@ -67,7 +69,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                 </div>
               )}
             </div>
-
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-antonela-600 dark:hover:text-antonela-200 hover:bg-antonela-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
@@ -94,7 +95,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                 >
                   <Icon className={`w-5 h-5 shrink-0 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
                   {!isCollapsed && <span>{item.title}</span>}
-
                   {isCollapsed && (
                     <div className="hidden lg:block absolute left-full rounded-md px-2.5 py-1.5 ml-3 bg-slate-800 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-50 shadow-md">
                       {item.title}
