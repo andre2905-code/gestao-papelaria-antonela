@@ -60,7 +60,7 @@ class UserPolicy
             return false;
         }
 
-        return $user->isAdmin() && $model->role === Role::User;
+        return ($user->isAdmin() && $model->role === Role::User) || ($user->isSuperAdmin() && $model->role === Role::Admin);
     }
 
     public function changeRole(User $user, User $model, ?Role $role = null): bool
