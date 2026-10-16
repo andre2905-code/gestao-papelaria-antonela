@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -14,47 +17,32 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
         return response()->json([
             'success' => null,
-            'data' => User::all(),
+            'data' => User::query()->latest()->get(),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string']
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
         ]);
 
-        $user = new User();
-
-        $user->name = $request->input('name');
-        $user->email = $request->input('email');
-        $user->password = $request->input('password');
-
-        $success = $user->save();
-
-        if (!$success) {
-            return response()->json([
-                'success' => $success,
-                'data' => [],
-                'message' => "Ocorreu um erro ao criar o usuário. Verifique as informações enviadas e tente novamente.",
-                'errors' => []
-            ]);
-        }
+        User::create($validated);
 
         return response()->json([
-            'success' => $success,
+            'success' => true,
             'data' => [],
-            'message' => "Usuário cadastrado com sucesso.",
-            'errors' => []
+            'message' => 'Usuário cadastrado com sucesso.',
+            'errors' => [],
         ]);
     }
 
@@ -69,52 +57,62 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user): JsonResponse
     {
-        $request->validate([
-            'name' => ['string', 'max:255'],
-            'email' => ['string', 'email'],
-            'password' => ['string']
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'password' => ['sometimes', 'string', 'min:8'],
         ]);
 
-        if ($request->input('name'))
-            $user->name = $request->input('name');
-
-        if ($request->input('email'))
-            $user->email = $request->input('email');
-
-        if ($request->input('password'))
-            $user->password = $request->input('password');
-
-        // $request->input('name') ??
-        // $request->input('email') ?? $user->email = $request->input('email');
-        // $request->input('password') ?? $user->password = $request->input('password');
-
-        $success = $user->save();
-
-        if (!$success) {
-            return response()->json([
-                'success' => $success,
-                'data' => [],
-                'message' => "Ocorreu um erro ao editar o usuário. Verifique as informações enviadas e tente novamente.",
-                'errors' => []
-            ]);
-        }
+        $user->update($validated);
 
         return response()->json([
-            'success' => $success,
+            'success' => true,
             'data' => [],
-            'message' => "Usuário editado com sucesso.",
-            'errors' => []
+            'message' => 'Usuário editado com sucesso.',
+            'errors' => [],
         ]);
+    }
 
+    public function changeRole(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'role' => ['required', Rule::enum(Role::class)],
+        ]);
+        $role = Role::from($validated['role']);
+
+        Gate::authorize('changeRole', [$user, $role]);
+
+        $user->role = $role;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => $user->fresh(),
+            'message' => 'Papel do usuário alterado com sucesso.',
+            'errors' => [],
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $user): JsonResponse
     {
-        // Implement soft delete
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => [],
+            'message' => 'Usuário excluído com sucesso.',
+            'errors' => [],
+        ]);
     }
 }

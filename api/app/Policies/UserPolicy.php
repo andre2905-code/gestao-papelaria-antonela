@@ -2,17 +2,28 @@
 
 namespace App\Policies;
 
+use App\Enums\Role;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class UserPolicy
 {
+    public function before(User $authUser, string $ability): ?bool
+    {
+        if (!$authUser->isSuperAdmin()) {
+            return null;
+        }
+
+        return in_array($ability, ['delete', 'changeRole', 'restore', 'forceDelete'], true)
+            ? null
+            : true;
+    }
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -20,7 +31,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return false;
+        return $user->isAdmin() || $user->id === $model->id;
     }
 
     /**
@@ -28,7 +39,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -36,7 +47,8 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->id === $model->id;
+        return $user->id === $model->id
+            || ($user->isAdmin() && $model->role === Role::User);
     }
 
     /**
@@ -44,7 +56,26 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        return false;
+        if ($user->id === $model->id || $model->isSuperAdmin()) {
+            return false;
+        }
+
+        return $user->isAdmin() && $model->role === Role::User;
+    }
+
+    public function changeRole(User $user, User $model, ?Role $role = null): bool
+    {
+        if (!$user->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($model->isSuperAdmin() && $role !== Role::SuperAdmin) {
+            return User::query()
+                ->where('role', Role::SuperAdmin->value)
+                ->count() > 1;
+        }
+
+        return true;
     }
 
     /**
