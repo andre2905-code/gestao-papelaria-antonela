@@ -1,6 +1,8 @@
+
 <?php
 
 namespace App\Http\Controllers;
+
 
 use App\Models\Deposit;
 use Illuminate\Http\Request;
@@ -12,7 +14,9 @@ class DepositController extends Controller
      */
     public function index()
     {
-        //
+        $deposits = Deposit::all();
+
+        return response()->json($deposits);
     }
 
     /**
@@ -20,7 +24,14 @@ class DepositController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+        ]);
+
+        $deposit = Deposit::create($validated);
+
+        return response()->json($deposit, 201);
     }
 
     /**
@@ -28,7 +39,7 @@ class DepositController extends Controller
      */
     public function show(Deposit $deposit)
     {
-        //
+        return response()->json($deposit);
     }
 
     /**
@@ -36,7 +47,14 @@ class DepositController extends Controller
      */
     public function update(Request $request, Deposit $deposit)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'location' => 'sometimes|nullable|string|max:255',
+        ]);
+
+        $deposit->update($validated);
+
+        return response()->json($deposit);
     }
 
     /**
@@ -44,6 +62,10 @@ class DepositController extends Controller
      */
     public function destroy(Deposit $deposit)
     {
-        //
+        $deposit->delete();
+
+        return response()->json([
+            'message' => 'Depósito excluído com sucesso.'
+        ]);
     }
 }
