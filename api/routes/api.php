@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -26,5 +27,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/users/{user}/role', [UserController::class, 'changeRole'])
             ->middleware('can:changeRole,user')
             ->name('change-role');
+    });
+
+    Route::name('products')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])
+            ->name('list');
+
+        Route::post('/products', [ProductController::class, 'store'])
+            ->name('store');
+
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+            ->name('destroy');
     });
 });
