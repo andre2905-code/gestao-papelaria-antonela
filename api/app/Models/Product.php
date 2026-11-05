@@ -18,7 +18,9 @@ class Product extends Model
 
     public function depositItems()
     {
-        return $this->hasMany(DepositItem::class);
+        return $this->belongsToMany(Deposit::class, 'product_deposit')
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
 
     public function category()
