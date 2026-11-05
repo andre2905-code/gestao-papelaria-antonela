@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DepositController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
@@ -38,5 +40,36 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])
             ->name('destroy');
+
+        Route::patch('/products/{product}', [ProductController::class, 'update'])
+            ->name('update');
+    });
+
+    Route::name('deposits.')->group(function () {
+        Route::get('/deposits', [DepositController::class, 'index'])
+            ->name('list');
+
+        Route::post('/deposits', [DepositController::class, 'store'])
+            ->name('store');
+
+        Route::delete('/deposits/{deposit}', [DepositController::class, 'destroy'])
+            ->name('destroy');
+
+        Route::patch('/deposits/{deposit}', [DepositController::class, 'update'])
+            ->name('update');
+    });
+
+    Route::name('categories.')->group(function () {
+        Route::get('/categories', [CategoryController::class, 'index'])
+            ->name('list');
+
+        Route::post('/categories', [CategoryController::class, 'store'])
+            ->name('store');
+
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])
+            ->name('destroy');
+
+        Route::patch('/categories/{category}', [CategoryController::class, 'update'])
+            ->name('update');
     });
 });

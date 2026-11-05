@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[Fillable(['name', 'is_active'])]
 class Category extends Model
 {
     /** @use HasFactory<\Database\Factories\CategoryFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    public function products() {
+    public function products()
+    {
         return $this->hasMany(Product::class);
     }
 }
