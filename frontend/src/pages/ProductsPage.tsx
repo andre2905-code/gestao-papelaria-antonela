@@ -1,40 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search, Trash2, Package, X } from "lucide-react";
-import { Product, ProductFormData } from "../types/api";
+import type { Product, ProductFormData } from "../types/api";
+import {
+    getProducts,
+    createProduct,
+    deleteProduct,
+} from "../services/productService";
 
-const initialProducts: Product[] = [
-    {
-        id: 1,
-        title: "Caderno Universitário 10 Matérias",
-        price: 29.9,
-        promo_price: 24.9,
-        sku: "CAD-001",
-        is_active: true,
-        category_id: 1,
-        category: { id: 1, name: "Cadernos" },
-        deposits: [{ id: 1, stock: 50 }],
-        stock_total: 150,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
-    },
-    {
-        id: 2,
-        title: "Caneta Esferográfica Azul 0.7mm",
-        price: 3.5,
-        promo_price: null,
-        sku: "CAN-002",
-        is_active: true,
-        category_id: 2,
-        category: { id: 2, name: "Escrita" },
-        deposits: [{ id: 1, stock: 200 }],
-        stock_total: 200,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
-    },
-];
+
 
 export const ProductsPage: React.FC = () => {
-    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState<ProductFormData>({
@@ -46,33 +24,58 @@ export const ProductsPage: React.FC = () => {
         is_active: true,
     });
 
+    useEffect(() => {
+    async function loadProducts() {
+        try {
+            setIsLoading(true);
+            setError("");
+
+            const data = await getProducts();
+
+            setProducts(data);
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Erro ao carregar produtos."
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    loadProducts();
+}, []);
     const filteredProducts = products.filter(
         (p) =>
             p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase())),
     );
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newProduct: Product = {
-            id: Date.now(),
+    const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+        setError("");
+
+        const newProduct = await createProduct({
             title: formData.title,
             price: Number(formData.price),
             promo_price: formData.promo_price
                 ? Number(formData.promo_price)
                 : null,
             sku: formData.sku || null,
-            is_active: formData.is_active,
             category_id: Number(formData.category_id),
-            category: { id: formData.category_id, name: "Geral" },
-            deposits: [],
-            stock_total: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
+            is_active: formData.is_active,
 
-        setProducts([newProduct, ...products]);
+            // Temporariamente sem estoque inicial
+            deposits: [],
+        });
+
+        setProducts((previous) => [newProduct, ...previous]);
+
         setIsModalOpen(false);
+
         setFormData({
             title: "",
             price: 0,
@@ -81,13 +84,34 @@ export const ProductsPage: React.FC = () => {
             category_id: 1,
             is_active: true,
         });
-    };
+    } catch (err) {
+        setError(
+            err instanceof Error
+                ? err.message
+                : "Erro ao cadastrar produto."
+        );
+    }
+};
 
-    const handleDelete = (id: number) => {
-        if (confirm("Tem certeza que deseja remover este produto?")) {
-            setProducts(products.filter((p) => p.id !== id));
-        }
-    };
+   const handleDelete = async (id: number) => {
+    if (!confirm("Tem certeza que deseja remover este produto?")) {
+        return;
+    }
+
+    try {
+        await deleteProduct(id);
+
+        setProducts((previous) =>
+            previous.filter((product) => product.id !== id)
+        );
+    } catch (err) {
+        setError(
+            err instanceof Error
+                ? err.message
+                : "Erro ao excluir produto."
+        );
+    }
+};
 
     return (
         <div className="space-y-6">

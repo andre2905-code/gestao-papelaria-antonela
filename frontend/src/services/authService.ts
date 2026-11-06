@@ -1,98 +1,112 @@
+
 import type { AuthenticatedUser, LoginCredentials } from '../types/auth'
 
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
+
+// Remove o /api para acessar as rotas de autenticação.
+const serverUrl = apiUrl.replace(/\/api\/?$/, '')
 
 function getCsrfToken(): string {
-  const token = document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
-    ?.substring('XSRF-TOKEN='.length)
+    const token = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
+        ?.substring('XSRF-TOKEN='.length)
 
-  return token ? decodeURIComponent(token) : ''
+    return token ? decodeURIComponent(token) : ''
 }
 
 async function getErrorMessage(response: Response): Promise<string> {
-  const payload = await response.json().catch(() => ({}))
+    const payload = await response.json().catch(() => ({}))
 
-  if (payload.errors) {
-    return Object.values(payload.errors as Record<string, string[]>)
-      .flat()
-      .join(' ')
-  }
+    if (payload.errors) {
+        return Object.values(payload.errors as Record<string, string[]>)
+            .flat()
+            .join(' ')
+    }
 
-  return payload.message ?? 'Não foi possível concluir a operação. Tente novamente.'
+    return payload.message ??
+        'Não foi possível concluir a operação. Tente novamente.'
 }
 
 async function requestCsrfCookie(): Promise<void> {
-  const response = await fetch(`${apiUrl}/sanctum/csrf-cookie`, {
-    credentials: 'include',
-  })
+    const response = await fetch(`${serverUrl}/sanctum/csrf-cookie`, {
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
 
-  if (!response.ok) {
-    throw new Error('Não foi possível iniciar a sessão segura.')
-  }
+    if (!response.ok) {
+        throw new Error('Não foi possível iniciar a sessão segura.')
+    }
 }
 
-export async function login(credentials: LoginCredentials): Promise<AuthenticatedUser> {
-  await requestCsrfCookie()
+export async function login(
+    credentials: LoginCredentials
+): Promise<AuthenticatedUser> {
+    await requestCsrfCookie()
 
-  const response = await fetch(`${apiUrl}/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-XSRF-TOKEN': getCsrfToken(),
-    },
-    body: JSON.stringify(credentials),
-  })
+    const response = await fetch(`${serverUrl}/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-XSRF-TOKEN': getCsrfToken(),
+        },
+        body: JSON.stringify(credentials),
+    })
 
-  if (!response.ok) {
-    throw new Error(await getErrorMessage(response))
-  }
+    if (!response.ok) {
+        throw new Error(await getErrorMessage(response))
+    }
 
-  const userResponse = await fetch(`${apiUrl}/api/user`, {
-    credentials: 'include',
-    headers: { Accept: 'application/json' },
-  })
+    const userResponse = await fetch(`${serverUrl}/api/user`, {
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
 
-  if (!userResponse.ok) {
-    throw new Error('Login realizado, mas não foi possível carregar o usuário.')
-  }
+    if (!userResponse.ok) {
+        throw new Error(
+            'Login realizado, mas não foi possível carregar o usuário.'
+        )
+    }
 
-  return userResponse.json()
+    return userResponse.json()
 }
 
 export async function logout(): Promise<void> {
-  const response = await fetch(`${apiUrl}/logout`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'X-XSRF-TOKEN': getCsrfToken(),
-    },
-  })
+    const response = await fetch(`${serverUrl}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+            'X-XSRF-TOKEN': getCsrfToken(),
+        },
+    })
 
-  if (!response.ok) {
-    throw new Error(await getErrorMessage(response))
-  }
+    if (!response.ok) {
+        throw new Error(await getErrorMessage(response))
+    }
 }
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
-  const response = await fetch(`${apiUrl}/api/user`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
+    const response = await fetch(`${serverUrl}/api/user`, {
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
 
-  if (response.status === 401) {
-    return null
-  }
+    if (response.status === 401) {
+        return null
+    }
 
-  if (!response.ok) {
-    throw new Error('Não foi possível verificar a sessão.')
-  }
+    if (!response.ok) {
+        throw new Error('Não foi possível verificar a sessão.')
+    }
 
-  return response.json()
+    return response.json()
 }
