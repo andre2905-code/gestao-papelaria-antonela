@@ -1,7 +1,8 @@
 
 import type { AuthenticatedUser, LoginCredentials } from '../types/auth'
 
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000 '
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
+const serverUrl = apiUrl.replace(/\/api$/, '')
 
 function getCsrfToken(): string {
     const token = document.cookie

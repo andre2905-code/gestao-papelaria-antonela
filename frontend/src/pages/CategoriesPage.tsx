@@ -172,7 +172,7 @@ export const CategoriesPage: React.FC = () => {
                   </td>
 
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                    Informação indisponível
+                    {category.products_count}
                   </td>
 
                   <td className="px-6 py-4">
@@ -260,4 +260,3 @@ export const CategoriesPage: React.FC = () => {
     </div>
   );
 };
-
