@@ -14,7 +14,7 @@ class CategoryController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(Category::all());
+        return response()->json(Category::withCount('products')->get());
     }
 
     /**
@@ -31,7 +31,7 @@ class CategoryController extends Controller
             'is_active' => true,
         ]);
 
-        return response()->json($category, 201);
+        return response()->json($category->loadCount('products'), 201);
     }
 
     /**
@@ -59,7 +59,7 @@ class CategoryController extends Controller
 
         $category->update($data);
 
-        return response()->json($category->fresh());
+        return response()->json($category->fresh()->loadCount('products'));
     }
 
     /**
