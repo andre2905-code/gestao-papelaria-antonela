@@ -27,7 +27,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:255', 'unique:products,title'],
+            'title' => ['required', 'string', 'max:255'],
             'price' => ['required', 'decimal:0,2', 'min:0'],
             'promo_price' => ['nullable', 'decimal:0,2', 'min:0', 'lt:price'],
             'category_id' => [
@@ -97,7 +97,6 @@ class ProductController extends Controller
                 'sometimes',
                 'string',
                 'max:255',
-                Rule::unique('products', 'title')->ignore($product->id),
             ],
             'price' => ['sometimes', 'decimal:0,2', 'min:0'],
             'promo_price' => ['sometimes', 'nullable', 'decimal:0,2', 'min:0'],
