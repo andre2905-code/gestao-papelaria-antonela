@@ -14,7 +14,9 @@ class DepositController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(Deposit::all());
+        $deposits = Deposit::with('items.product')->get();
+
+        return response()->json($deposits);
     }
 
     /**
