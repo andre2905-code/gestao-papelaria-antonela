@@ -102,6 +102,7 @@ export interface Order {
 export interface Customer {
   id: number;
   name: string;
+  email: string;
   phone: string | null;
   cpf: string | null;
   birth_date: string | null;
@@ -113,6 +114,7 @@ export interface Customer {
 
 export interface CustomerFormData {
   name: string;
+  email: string;
   phone: string;
   cpf: string;
   birth_date: string;

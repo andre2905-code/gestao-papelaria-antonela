@@ -14,9 +14,10 @@ class CustomerController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(Customer::all());
-    }
+        $customers = Customer::withCount('orders')->get();
 
+        return response()->json($customers);
+    }
     /**
      * Store a newly created resource in storage.
      */
