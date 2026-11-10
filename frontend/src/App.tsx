@@ -14,7 +14,7 @@ import './App.css';
 
 const App: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, error, isLoading, isInitializing, login } = useAuth();
+  const { user, error, isLoading, isInitializing, login, logout } = useAuth();
 
   // Tela de carregamento inicial enquanto valida o estado da sessão
   if (isInitializing) {
@@ -46,7 +46,7 @@ const App: React.FC = () => {
           isCollapsed ? 'lg:pl-20' : 'lg:pl-64'
         }`}
       >
-        <Header isCollapsed={isCollapsed} />
+        <Header isCollapsed={isCollapsed} user={user} onLogout={logout} />
 
         <main className="flex-1 p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
           <Routes>

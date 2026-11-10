@@ -29,8 +29,10 @@ type ProductFormState = {
   sku: string;
   category_id: number;
   is_active: boolean;
-  deposit_id: number;
-  quantity: number;
+  deposits: Array<{
+    deposit_id: number;
+    quantity: number;
+  }>;
 };
 
 const initialForm: ProductFormState = {
@@ -40,8 +42,7 @@ const initialForm: ProductFormState = {
   sku: '',
   category_id: 0,
   is_active: true,
-  deposit_id: 0,
-  quantity: 1,
+  deposits: [{ deposit_id: 0, quantity: 1 }],
 };
 
 export const ProductsPage: React.FC = () => {
@@ -131,7 +132,7 @@ export const ProductsPage: React.FC = () => {
       }>;
     };
 
-    const firstDeposit = productWithDeposits.deposits?.[0];
+    const productDeposits = productWithDeposits.deposits ?? [];
 
     setFormData({
       title: product.title,
@@ -144,12 +145,15 @@ export const ProductsPage: React.FC = () => {
       sku: product.sku ?? '',
       category_id: Number(product.category_id),
       is_active: product.is_active,
-      deposit_id: firstDeposit?.id ?? 0,
-      quantity: Number(
-        firstDeposit?.pivot?.quantity ??
-        firstDeposit?.quantity ??
-        1
-      ),
+      deposits:
+        productDeposits.length > 0
+          ? productDeposits.map((deposit) => ({
+              deposit_id: deposit.id,
+              quantity: Number(
+                deposit.pivot?.quantity ?? deposit.quantity ?? 1
+              ),
+            }))
+          : [{ deposit_id: 0, quantity: 1 }],
     });
 
     setIsModalOpen(true);
@@ -171,6 +175,40 @@ export const ProductsPage: React.FC = () => {
     setFormData((current) => ({
       ...current,
       [field]: value,
+    }));
+  }
+
+  function addDeposit() {
+    setFormData((current) => ({
+      ...current,
+      deposits: [
+        ...current.deposits,
+        { deposit_id: 0, quantity: 1 },
+      ],
+    }));
+  }
+
+  function removeDeposit(index: number) {
+    setFormData((current) => ({
+      ...current,
+      deposits: current.deposits.filter(
+        (_, depositIndex) => depositIndex !== index
+      ),
+    }));
+  }
+
+  function updateDeposit(
+    index: number,
+    field: 'deposit_id' | 'quantity',
+    value: number
+  ) {
+    setFormData((current) => ({
+      ...current,
+      deposits: current.deposits.map((deposit, depositIndex) =>
+        depositIndex === index
+          ? { ...deposit, [field]: value }
+          : deposit
+      ),
     }));
   }
 
@@ -206,13 +244,21 @@ export const ProductsPage: React.FC = () => {
       return;
     }
 
-    if (formData.deposit_id <= 0) {
+    if (formData.deposits.some((deposit) => deposit.deposit_id <= 0)) {
       setError('Selecione um depósito.');
       return;
     }
 
-    if (formData.quantity <= 0) {
+    if (formData.deposits.some((deposit) => deposit.quantity <= 0)) {
       setError('A quantidade deve ser maior que zero.');
+      return;
+    }
+
+    if (
+      new Set(formData.deposits.map((deposit) => deposit.deposit_id)).size
+      !== formData.deposits.length
+    ) {
+      setError('Selecione depósitos diferentes para o produto.');
       return;
     }
 
@@ -230,12 +276,10 @@ export const ProductsPage: React.FC = () => {
             promo_price: formData.promo_price,
             category_id: Number(formData.category_id),
             is_active: formData.is_active,
-            deposits: [
-              {
-                id: Number(formData.deposit_id),
-                quantity: Number(formData.quantity),
-              },
-            ],
+            deposits: formData.deposits.map((deposit) => ({
+              id: Number(deposit.deposit_id),
+              quantity: Number(deposit.quantity),
+            })),
           }
         );
 
@@ -253,12 +297,10 @@ export const ProductsPage: React.FC = () => {
           promo_price: formData.promo_price,
           sku,
           category_id: Number(formData.category_id),
-          deposits: [
-            {
-              id: Number(formData.deposit_id),
-              quantity: Number(formData.quantity),
-            },
-          ],
+          deposits: formData.deposits.map((deposit) => ({
+            id: Number(deposit.deposit_id),
+            quantity: Number(deposit.quantity),
+          })),
         };
 
         const newProduct = await createProduct(payload);
@@ -607,55 +649,110 @@ export const ProductsPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Depósito */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                  Depósito *
-                </label>
+              {/* Depósitos */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold uppercase text-slate-500">
+                    Depósitos *
+                  </label>
 
-                <select
-                  required
-                  value={formData.deposit_id || ''}
-                  onChange={(e) =>
-                    handleChange('deposit_id', Number(e.target.value))
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100"
-                >
-                  <option value="" disabled>
-                    Selecione um depósito
-                  </option>
+                  <button
+                    type="button"
+                    onClick={addDeposit}
+                    disabled={
+                      isSaving ||
+                      formData.deposits.length >= deposits.length
+                    }
+                    className="flex items-center gap-1 text-xs font-semibold text-antonela-600 hover:text-antonela-500 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar depósito
+                  </button>
+                </div>
 
-                  {deposits.map((deposit) => (
-                    <option key={deposit.id} value={deposit.id}>
-                      {deposit.name}
-                    </option>
-                  ))}
-                </select>
+                {formData.deposits.map((productDeposit, index) => (
+                  <div
+                    key={`${index}-${productDeposit.deposit_id}`}
+                    className="flex items-end gap-2"
+                  >
+                    <div className="flex-1">
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Depósito
+                      </label>
+
+                      <select
+                        required
+                        value={productDeposit.deposit_id || ''}
+                        onChange={(e) =>
+                          updateDeposit(
+                            index,
+                            'deposit_id',
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100"
+                      >
+                        <option value="" disabled>
+                          Selecione um depósito
+                        </option>
+
+                        {deposits.map((deposit) => (
+                          <option
+                            key={deposit.id}
+                            value={deposit.id}
+                            disabled={formData.deposits.some(
+                              (selectedDeposit, selectedIndex) =>
+                                selectedIndex !== index &&
+                                selectedDeposit.deposit_id === deposit.id
+                            )}
+                          >
+                            {deposit.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="w-28">
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Quantidade
+                      </label>
+
+                      <input
+                        required
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={productDeposit.quantity}
+                        onChange={(e) =>
+                          updateDeposit(
+                            index,
+                            'quantity',
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100"
+                      />
+                    </div>
+
+                    {formData.deposits.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeDeposit(index)}
+                        disabled={isSaving}
+                        className="p-2 mb-0.5 text-slate-400 hover:text-rose-500 cursor-pointer"
+                        aria-label="Remover depósito"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
 
                 {deposits.length === 0 && (
-                  <p className="text-xs text-rose-500 mt-1">
+                  <p className="text-xs text-rose-500">
                     Nenhum depósito ativo encontrado.
                   </p>
                 )}
-              </div>
-
-              {/* Quantidade */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                  Quantidade *
-                </label>
-
-                <input
-                  required
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={formData.quantity}
-                  onChange={(e) =>
-                    handleChange('quantity', Number(e.target.value))
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100"
-                />
               </div>
 
               {/* Status: somente edição */}

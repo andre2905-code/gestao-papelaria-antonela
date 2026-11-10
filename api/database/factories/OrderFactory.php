@@ -32,14 +32,18 @@ class OrderFactory extends Factory
         ];
     }
 
-    public function withItems(int $count = 3): static
+    public function withItems(int $count = 3, ?array $productIds = null, ?array $depositIds = null): static
     {
         return $this->has(
             OrderItem::factory()
                 ->count($count)
-                ->state(function (array $attributes, Order $order) {
-                    $product = Product::factory()->create();
-                    $deposit = Deposit::factory()->create();
+                ->state(function (array $attributes, Order $order) use ($productIds, $depositIds) {
+                    $product = $productIds
+                        ? Product::query()->find(fake()->randomElement($productIds))
+                        : Product::factory()->create();
+                    $deposit = $depositIds
+                        ? Deposit::query()->find(fake()->randomElement($depositIds))
+                        : Deposit::factory()->create();
                     $quantity = fake()->numberBetween(1, 5);
                     $unitPrice = $product->promo_price ?? $product->price;
 

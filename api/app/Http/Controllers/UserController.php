@@ -25,6 +25,24 @@ class UserController extends Controller
         ]);
     }
 
+    public function roles(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => array_map(
+                static fn (Role $role): array => [
+                    'value' => $role->value,
+                    'label' => match ($role) {
+                        Role::User => 'Usuário',
+                        Role::Admin => 'Administrador',
+                        Role::SuperAdmin => 'Super administrador',
+                    },
+                ],
+                Role::cases(),
+            ),
+        ]);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -34,7 +52,11 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
+            'role' => ['sometimes', Rule::enum(Role::class)],
         ]);
+
+        $role = Role::from($validated['role'] ?? Role::User->value);
+        Gate::authorize('create', [User::class, $role]);
 
         User::create($validated);
 
@@ -68,8 +90,12 @@ class UserController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
-            'password' => ['sometimes', 'string', 'min:8'],
+            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
         ]);
+
+        if (blank($validated['password'] ?? null)) {
+            unset($validated['password']);
+        }
 
         $user->update($validated);
 

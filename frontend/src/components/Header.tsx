@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { User, Sun, Moon, ChevronDown, UserCog, Settings, SwitchCamera } from 'lucide-react';
+import { User, Sun, Moon, ChevronDown, UserCog, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { AuthenticatedUser } from '../types/auth';
 
 interface HeaderProps {
   isCollapsed?: boolean;
+  user: AuthenticatedUser;
+  onLogout: () => Promise<void>;
 }
 
-export const Header: React.FC<HeaderProps> = () => {
+export const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
@@ -15,6 +19,7 @@ export const Header: React.FC<HeaderProps> = () => {
   });
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +43,15 @@ export const Header: React.FC<HeaderProps> = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="h-16 bg-white dark:bg-slate-800 border-b border-antonela-100 dark:border-slate-700 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 transition-colors duration-200">
@@ -67,7 +81,7 @@ export const Header: React.FC<HeaderProps> = () => {
           >
             <div className="text-right hidden sm:block">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">
-                Atendimento Antonela
+                {user.name}
               </p>
               <p className="text-xs text-antonela-600 dark:text-antonela-200 font-medium">
                 Operador de Sistema
@@ -83,34 +97,31 @@ export const Header: React.FC<HeaderProps> = () => {
           {isUserMenuOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 sm:hidden">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Atendimento Antonela</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{user.name}</p>
                 <p className="text-xs text-antonela-600 dark:text-antonela-200">Operador de Sistema</p>
               </div>
 
-              <button
+              <Link
+                to="/users"
                 onClick={() => setIsUserMenuOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-antonela-50 dark:hover:bg-slate-700 hover:text-antonela-600 dark:hover:text-antonela-200 flex items-center space-x-2.5 transition-colors cursor-pointer"
               >
                 <UserCog className="w-4 h-4 text-slate-400" />
-                <span>Perfil do Operador</span>
-              </button>
-
-              <button
-                onClick={() => setIsUserMenuOpen(false)}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-antonela-50 dark:hover:bg-slate-700 hover:text-antonela-600 dark:hover:text-antonela-200 flex items-center space-x-2.5 transition-colors cursor-pointer"
-              >
-                <Settings className="w-4 h-4 text-slate-400" />
-                <span>Configurações do Painel</span>
-              </button>
+                <span>Perfil do operador</span>
+              </Link>
 
               <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
 
               <button
-                onClick={() => setIsUserMenuOpen(false)}
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  void handleLogout();
+                }}
+                disabled={isLoggingOut}
                 className="w-full text-left px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center space-x-2.5 transition-colors cursor-pointer"
               >
-                <SwitchCamera className="w-4 h-4" />
-                <span>Alternar Operador</span>
+                <LogOut className="w-4 h-4" />
+                <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
               </button>
             </div>
           )}

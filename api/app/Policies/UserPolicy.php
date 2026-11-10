@@ -37,9 +37,9 @@ class UserPolicy
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user): bool
+    public function create(User $user, ?Role $role = null): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() && ($role === null || $role === Role::User);
     }
 
     /**
@@ -56,11 +56,12 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        if ($user->id === $model->id || $model->isSuperAdmin()) {
+        if ($user->id === $model->id) {
             return false;
         }
 
-        return ($user->isAdmin() && $model->role === Role::User) || ($user->isSuperAdmin() && $model->role === Role::Admin);
+        return $user->isSuperAdmin()
+            || ($user->isAdmin() && $model->role === Role::User);
     }
 
     public function changeRole(User $user, User $model, ?Role $role = null): bool

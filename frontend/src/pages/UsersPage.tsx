@@ -11,12 +11,15 @@ import {
   UserCog,
 } from 'lucide-react';
 
-import type { User, UserFormData } from '../types/api';
+import type { User, UserFormData, UserRole, UserRoleOption } from '../types/api';
+import { useAuth } from '../hooks/useAuth';
 
 import {
   getUsers,
+  getUserRoles,
   createUser,
   updateUser,
+  changeUserRole,
   deleteUser as deleteUserService,
 } from '../services/userService';
 
@@ -25,10 +28,19 @@ const emptyForm: UserFormData = {
   email: '',
   password: '',
   password_confirmation: '',
+  role: 'user',
+};
+
+const roleLabels: Record<UserRole, string> = {
+  user: 'Usuário',
+  admin: 'Administrador',
+  super_admin: 'Super administrador',
 };
 
 export const UsersPage = () => {
+  const { user: authenticatedUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [roleOptions, setRoleOptions] = useState<UserRoleOption[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,14 +64,20 @@ export const UsersPage = () => {
       setIsLoading(true);
       setError(null);
 
-      const data = await getUsers();
+      const [data, roles] = await Promise.all([getUsers(), getUserRoles()]);
       setUsers(data);
+      setRoleOptions(roles);
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
+      const status = err instanceof Error && 'status' in err
+        ? (err as Error & { status?: number }).status
+        : undefined;
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível carregar os usuários.'
+        status === 403
+          ? 'Seu nível de acesso não permite visualizar os usuários cadastrados.'
+          : err instanceof Error
+            ? err.message
+            : 'Não foi possível carregar os usuários.'
       );
     } finally {
       setIsLoading(false);
@@ -95,6 +113,7 @@ export const UsersPage = () => {
         email: user.email,
         password: '',
         password_confirmation: '',
+        role: user.role,
       });
     } else {
       setEditingUser(null);
@@ -157,6 +176,9 @@ export const UsersPage = () => {
 
       if (editingUser) {
         await updateUser(editingUser.id, formData);
+        if (formData.role !== editingUser.role) {
+          await changeUserRole(editingUser.id, formData.role);
+        }
       } else {
         await createUser(formData);
       }
@@ -215,6 +237,25 @@ export const UsersPage = () => {
     }
   };
 
+  const isAdmin =
+    authenticatedUser?.role === 'admin' ||
+    authenticatedUser?.role === 'super_admin';
+  const isSuperAdmin = authenticatedUser?.role === 'super_admin';
+  const canEditUser = (user: User) =>
+    isSuperAdmin ||
+    authenticatedUser?.id === user.id ||
+    (authenticatedUser?.role === 'admin' && user.role === 'user');
+  const canDeleteUser = (user: User) =>
+    authenticatedUser?.id !== user.id &&
+    (isSuperAdmin ||
+      (authenticatedUser?.role === 'admin' && user.role === 'user'));
+  const accessTooltip = 'Seu nível de acesso não permite esta ação.';
+  const availableRoles = roleOptions.length > 0
+    ? roleOptions
+    : (Object.entries(roleLabels) as [UserRole, string][]).map(
+        ([value, label]) => ({ value, label }),
+      );
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -231,7 +272,9 @@ export const UsersPage = () => {
 
         <button
           onClick={() => openModal()}
-          className="flex items-center justify-center px-4 py-2.5 bg-antonela-600 hover:bg-antonela-500 text-white font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
+          disabled={!isAdmin}
+          title={!isAdmin ? accessTooltip : 'Novo usuário'}
+          className="flex items-center justify-center px-4 py-2.5 bg-antonela-600 hover:bg-antonela-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
         >
           <Plus className="w-5 h-5 mr-2" />
           Novo Usuário
@@ -266,6 +309,7 @@ export const UsersPage = () => {
               <tr>
                 <th className="px-6 py-3 font-semibold">Usuário</th>
                 <th className="px-6 py-3 font-semibold">E-mail</th>
+                <th className="px-6 py-3 font-semibold">Nível de acesso</th>
                 <th className="px-6 py-3 font-semibold">Verificado</th>
                 <th className="px-6 py-3 font-semibold">Criado em</th>
                 <th className="px-6 py-3 font-semibold text-right">
@@ -278,7 +322,7 @@ export const UsersPage = () => {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-slate-400"
                   >
                     Carregando usuários...
@@ -304,6 +348,10 @@ export const UsersPage = () => {
                       {user.email}
                     </td>
 
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                      {roleLabels[user.role]}
+                    </td>
+
                     <td className="px-6 py-4">
                       {user.email_verified_at ? (
                         <span className="inline-flex px-2.5 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-xs font-semibold rounded-full">
@@ -324,16 +372,18 @@ export const UsersPage = () => {
                       <div className="inline-flex gap-1">
                         <button
                           onClick={() => openModal(user)}
-                          className="p-1.5 text-slate-500 hover:text-antonela-600 dark:text-slate-400 dark:hover:text-antonela-200 rounded-lg transition-colors cursor-pointer"
-                          title="Editar"
+                          disabled={!canEditUser(user)}
+                          className="p-1.5 text-slate-500 hover:text-antonela-600 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-400 dark:hover:text-antonela-200 rounded-lg transition-colors cursor-pointer"
+                          title={canEditUser(user) ? 'Editar' : accessTooltip}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
 
                         <button
                           onClick={() => confirmDelete(user.id)}
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors cursor-pointer"
-                          title="Excluir"
+                          disabled={!canDeleteUser(user)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
+                          title={canDeleteUser(user) ? 'Excluir' : accessTooltip}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -344,7 +394,7 @@ export const UsersPage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-slate-400"
                   >
                     Nenhum usuário encontrado.
@@ -415,6 +465,32 @@ export const UsersPage = () => {
                 />
               </div>
 
+              {/* Nível de acesso */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
+                  Nível de acesso
+                </label>
+
+                <select
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      role: e.target.value as UserRole,
+                    })
+                  }
+                  disabled={!isSuperAdmin}
+                  title={!isSuperAdmin ? accessTooltip : 'Nível de acesso'}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {availableRoles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Senha */}
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
@@ -430,6 +506,7 @@ export const UsersPage = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({
@@ -464,6 +541,7 @@ export const UsersPage = () => {
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     value={formData.password_confirmation}
                     onChange={(e) =>
                       setFormData({

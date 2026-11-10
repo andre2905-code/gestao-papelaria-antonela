@@ -125,6 +125,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  role: UserRole;
   email_verified_at: string | null;
   created_at: string;
   updated_at?: string;
@@ -135,6 +136,14 @@ export interface UserFormData {
   email: string;
   password: string;
   password_confirmation: string;
+  role: UserRole;
+}
+
+export type UserRole = 'user' | 'admin' | 'super_admin';
+
+export interface UserRoleOption {
+  value: UserRole;
+  label: string;
 }
 
 export type CategoryFormData = {

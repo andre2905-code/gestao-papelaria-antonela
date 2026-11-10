@@ -56,12 +56,18 @@ export async function apiFetch<T>(
     if (!response.ok) {
         if (contentType?.includes('application/json')) {
             const data = await response.json();
-            throw new Error(
+            const error = new Error(
                 data.message || `Erro na requisição: ${response.status}`
-            );
+            ) as Error & { status?: number };
+            error.status = response.status;
+            throw error;
         }
 
-        throw new Error(`Erro na API: ${response.status}`);
+        const error = new Error(`Erro na API: ${response.status}`) as Error & {
+            status?: number;
+        };
+        error.status = response.status;
+        throw error;
     }
 
     if (!contentType?.includes('application/json')) {

@@ -28,6 +28,9 @@ services:
       DB_DATABASE: ${DB_DATABASE:-papelaria_db}
       DB_USERNAME: ${DB_USERNAME:-admin}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Administrador}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@antonela.test}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-password}
     depends_on:
       - db
 
@@ -43,7 +46,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8000/api
     depends_on:
       - api
 

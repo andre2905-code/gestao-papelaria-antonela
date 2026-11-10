@@ -108,3 +108,26 @@ test('a superadmin can demote a superadmin when another one remains', function (
 
     expect($otherSuperAdmin->fresh()->role)->toBe(Role::Admin);
 });
+
+test('a superadmin can delete any other user but not itself', function () {
+    $superAdmin = User::factory()->create(['role' => Role::SuperAdmin]);
+    $regularUser = User::factory()->create(['role' => Role::User]);
+    $admin = User::factory()->create(['role' => Role::Admin]);
+    $otherSuperAdmin = User::factory()->create(['role' => Role::SuperAdmin]);
+
+    $this->actingAs($superAdmin)
+        ->deleteJson("/api/users/{$regularUser->id}")
+        ->assertOk();
+
+    $this->actingAs($superAdmin)
+        ->deleteJson("/api/users/{$admin->id}")
+        ->assertOk();
+
+    $this->actingAs($superAdmin)
+        ->deleteJson("/api/users/{$otherSuperAdmin->id}")
+        ->assertOk();
+
+    $this->actingAs($superAdmin)
+        ->deleteJson("/api/users/{$superAdmin->id}")
+        ->assertForbidden();
+});
