@@ -14,6 +14,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/api
 
+# O Compose de desenvolvimento monta o código por volume; em produção o
+# código precisa estar dentro da imagem.
+COPY . .
+RUN composer install --prefer-dist --no-interaction --no-dev --optimize-autoloader
+
 # Script de entrada para automação de permissões e setup
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
